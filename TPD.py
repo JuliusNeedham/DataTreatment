@@ -8,10 +8,13 @@ from scipy.interpolate import interp1d
 from scipy.stats import linregress
 from scipy.integrate import simps
 import os
+import tkinter as tk
+from tkinter import filedialog
 
 
 """
-Author: Jakob Ejler Sørensen
+Original author: Jakob Ejler Sørensen
+Modified by: Julius Lucas Needham
 """
 
 class color():
@@ -246,8 +249,8 @@ def get_total_signal(exp, ID):
 Resembles a lot"""
 
     # For every experiment, add integrated signal as 'COVERAGE'
-    coverage = np.zeros(len(exp.viewkeys()))
-    for i in exp.viewkeys():
+    coverage = np.zeros(len(exp.keys()))
+    for i in exp.keys():
         ranges = []
         x = exp[i][ID][0]
         y = exp[i][ID][1]
@@ -326,159 +329,211 @@ def Veff(H, r = 0.5):
 
 
 
-def generate_standard_plots(exp, coverage=None, doses=None, selection=[]):
+def generate_standard_plots(exp, ID=None, coverage=None, doses=None, selection=[]):
     """ Generate standard plots for a single TPD experiment. """
 
     # Check if selection has been given
     if len(selection) < 1:
-        selection = exp.viewkeys()
+        selection = exp.keys()
 
     GUIDE_LINES = (np.arange(10)+1) * 100
     fig, ax = {}, {}    
     # Plot general data overview plot for each sub-TPD
     for i in selection:
-        fig_id = 'overview TPD {}'.format(i)
-        fig[fig_id] = plt.figure(fig_id)
+        if ID == 1:
+            fig_id = 'overview TPD {}'.format(i)
+            fig[fig_id] = plt.figure(fig_id)
 
-        # Plot actual TPD result
-        ax[i] = {}
-        ax[i][1] = fig[fig_id].add_subplot(221)
-        data = exp[i]['M30']
-        ax[i][1].plot(data[2], data[1], 'r-')
-        ax[i][1].set_xlabel('Temperature (C)')
-        ax[i][1].set_ylabel('SEM current (A)')
-        add_scale_Kelvin(ax[i][1])
+            # Plot actual TPD result
+            ax[i] = {}
+            ax[i][1] = fig[fig_id].add_subplot(221)
+            data = exp[i]['M30']
+            ax[i][1].plot(data[2], data[1], 'r-')
+            ax[i][1].set_xlabel('Temperature (C)')
+            ax[i][1].set_ylabel('SEM current (A)')
+            add_scale_Kelvin(ax[i][1])
 
-        # Plot raw signal vs time
-        ax[i][2] = fig[fig_id].add_subplot(222)
-        ax[i][2].plot(data[0] - data[0][0], data[1], 'ro-')
-        ax[i][2].set_xlabel('Time (s)')
-        ax[i][2].set_ylabel('SEM current (A)')
-        if not coverage is None and not doses is None:
-            ax[i][2].text(0.5, 0.85, 'Dose:        {:.3} mbar s\nCoverage: {:.3} C'.format(doses[i], coverage[i]), transform=ax[i][2].transAxes)
+            # Plot raw signal vs time
+            ax[i][2] = fig[fig_id].add_subplot(222)
+            ax[i][2].plot(data[0] - data[0][0], data[1], 'ro-')
+            ax[i][2].set_xlabel('Time (s)')
+            ax[i][2].set_ylabel('SEM current (A)')
+            if not coverage is None and not doses is None:
+                ax[i][2].text(0.5, 0.85, 'Dose:        {:.3} mbar s\nCoverage: {:.3} C'.format(doses[i], coverage[i]), transform=ax[i][2].transAxes)
 
-        # Plot temperature vs time
-        ax_id = 'temperature {}'.format(i)
-        ax[i][3] = fig[fig_id].add_subplot(223)
-        data = exp[i]['Sample temperature']
-        slope = exp[i]['Slope']
-        ax[i][3].plot(data[0] - data[0][0], data[1], 'b-')
-        ax[i][3].plot(data[0] - data[0][0], slope, 'k-')
-        value_of_slope = (slope[-1]- slope[0])/(data[0][-1]-data[0][0])
-        ax[i][3].text(.05, 0.7, 'Heat rate: {:.3} K/s'.format(value_of_slope), transform=ax[i][3].transAxes)
-        ax[i][3].set_xlabel('Time (s)')
-        ax[i][3].set_ylabel('Temperature (C)')
-        add_scale_Kelvin(ax[i][3], axis='y')
+            # Plot temperature vs time
+            ax_id = 'temperature {}'.format(i)
+            ax[i][3] = fig[fig_id].add_subplot(223)
+            data = exp[i]['Sample temperature']
+            slope = exp[i]['Slope']
+            ax[i][3].plot(data[0] - data[0][0], data[1], 'b-')
+            ax[i][3].plot(data[0] - data[0][0], slope, 'k-')
+            value_of_slope = (slope[-1]- slope[0])/(data[0][-1]-data[0][0])
+            ax[i][3].text(.05, 0.7, 'Heat rate: {:.3} K/s'.format(value_of_slope), transform=ax[i][3].transAxes)
+            ax[i][3].set_xlabel('Time (s)')
+            ax[i][3].set_ylabel('Temperature (C)')
+            add_scale_Kelvin(ax[i][3], axis='y')
 
-        # Plot difference in temperature and slope vs time
-        ax[i][4] = fig[fig_id].add_subplot(224)
-        ax[i][4].axhline(y=0, linestyle='solid', color='k')
-        for j in [-1, 1]:
-            ax[i][4].axhline(y=j, linestyle='dashed', color='k')
-        ax[i][4].plot(data[0] - data[0][0], data[1] - slope, 'b-')
-        ax[i][4].set_xlabel('Time (s)')
-        ax[i][4].set_ylabel('Temp$_{meas}$ - Temp$_{avg}$')
+            # Plot difference in temperature and slope vs time
+            ax[i][4] = fig[fig_id].add_subplot(224)
+            ax[i][4].axhline(y=0, linestyle='solid', color='k')
+            for j in [-1, 1]:
+                ax[i][4].axhline(y=j, linestyle='dashed', color='k')
+            ax[i][4].plot(data[0] - data[0][0], data[1] - slope, 'b-')
+            ax[i][4].set_xlabel('Time (s)')
+            ax[i][4].set_ylabel('Temp$_{meas}$ - Temp$_{avg}$')
 
-        
-        # Plot power supply data
-        fig_id = 'Filament data {}'.format(i)
-        fig[fig_id] = plt.figure(fig_id)
-        ax[i][5] = fig[fig_id].add_subplot(121)
-        data = exp[i]['Voltage monitor']
-        ax[i][5].plot(data[0] - data[0][0], data[1], 'k-')
-        ax[i][5].set_xlabel('Time (s)')
-        ax[i][5].set_ylabel('Voltage (V)')
-        ax[i][5].set_ylim([0, 6.5])
-        ax[i][5].arrow(.7, .4, 0.05, 0, color='m', transform=ax[i][5].transAxes)
-        ax[i][5].text(.7, .4, 'Current ', color='m', verticalalignment='center', horizontalalignment='right', transform=ax[i][5].transAxes)
-        ax[i][5].arrow(.55, .3, -0.05, 0, color='k', transform=ax[i][5].transAxes)
-        ax[i][5].text(.55, .3, ' Voltage', color='k', verticalalignment='center', horizontalalignment='left', transform=ax[i][5].transAxes)
-        ax_twinx = ax[i][5].twinx()
-        
-        data = exp[i]['Current monitor']
-        ax_twinx.plot(data[0] - data[0][0], data[1], 'm-')
-        ax_twinx.set_ylim([0, 6.0])
-        ax_twinx.set_ylabel('Current (A)')
+            """# OLD CODE: Plot power supply data
+            fig_id = 'Filament data {}'.format(i)
+            fig[fig_id] = plt.figure(fig_id)
+            ax[i][5] = fig[fig_id].add_subplot(121)
+            data = exp[i]['Voltage monitor']
+            ax[i][5].plot(data[0] - data[0][0], data[1], 'k-')
+            ax[i][5].set_xlabel('Time (s)')
+            ax[i][5].set_ylabel('Voltage (V)')
+            ax[i][5].set_ylim([0, 6.5])
+            ax[i][5].arrow(.7, .4, 0.05, 0, color='m', transform=ax[i][5].transAxes)
+            ax[i][5].text(.7, .4, 'Current ', color='m', verticalalignment='center', horizontalalignment='right', transform=ax[i][5].transAxes)
+            ax[i][5].arrow(.55, .3, -0.05, 0, color='k', transform=ax[i][5].transAxes)
+            ax[i][5].text(.55, .3, ' Voltage', color='k', verticalalignment='center', horizontalalignment='left', transform=ax[i][5].transAxes)
+            ax_twinx = ax[i][5].twinx()
+            
+            data = exp[i]['Current monitor']
+            ax_twinx.plot(data[0] - data[0][0], data[1], 'm-')
+            ax_twinx.set_ylim([0, 6.0])
+            ax_twinx.set_ylabel('Current (A)')
+            """    
+            """# OLD CODE: Plot PID data
+            ax[i][6] = fig[fig_id].add_subplot(122)
+            data = exp[i]['P error']
+            x = data[0] - data[0][0]
+            y = data[1]
+            ax[i][6].plot(x[25:], y[25:], 'k-') # Hardcoded index range due to earlier extended experiment region
+            ax[i][6].set_xlabel('Time (s)')
+            ax[i][6].set_ylabel('P error')
+            ax_twinx = ax[i][6].twinx()
+            
+            data = exp[i]['I error']
+            x = data[0] - data[0][0]
+            y = data[1]
+            ax_twinx.plot(x[25:], y[25:], 'm-') # Hardcoded index range due to earlier extended experiment region
+            ax_twinx.set_ylabel('I error')
+            """
+            
+            # Plot guiding lines
+            XLIM = [0, data[0][-1]-data[0][0]]
+            #Add more j in case of more plots
+            for j in [2, 3, 4]:
+                print(i,j)
+                axis = ax[i][j]
+                for X in GUIDE_LINES:
+                    axis.axvline(x=X, linestyle='-.', color='k', alpha=0.3)
+                axis.set_xlim(XLIM)
 
-        # Plot PID data
-        ax[i][6] = fig[fig_id].add_subplot(122)
-        data = exp[i]['P error']
-        x = data[0] - data[0][0]
-        y = data[1]
-        ax[i][6].plot(x[25:], y[25:], 'k-') # Hardcoded index range due to earlier extended experiment region
-        ax[i][6].set_xlabel('Time (s)')
-        ax[i][6].set_ylabel('P error')
-        ax_twinx = ax[i][6].twinx()
-        
-        data = exp[i]['I error']
-        x = data[0] - data[0][0]
-        y = data[1]
-        ax_twinx.plot(x[25:], y[25:], 'm-') # Hardcoded index range due to earlier extended experiment region
-        ax_twinx.set_ylabel('I error')
+            if not coverage is None and not doses is None:
+                # Plot uptake curve
+                fig_id = 'Uptake curve'
+                fig[fig_id] = plt.figure(fig_id)
+                ax_id = 'Uptake curve'
+                ax[ax_id] = fig[fig_id].add_subplot(111)
+                ax[ax_id].plot(doses/1.33e-6, coverage, 'ko')
+                ax[ax_id].set_xlabel('Doseage (1.33e-6 mbar s)')
+                ax[ax_id].set_ylabel('Coverage (C)')
+                x1, x2 = ax[ax_id].get_xlim()
+                ax[ax_id].set_xlim([0, x2])
 
-        # Plot guiding lines
-        XLIM = [0, data[0][-1]-data[0][0]]
-        for j in [2, 3, 4, 5, 6]:
-            print(i,j)
-            axis = ax[i][j]
-            for X in GUIDE_LINES:
-                axis.axvline(x=X, linestyle='-.', color='k', alpha=0.3)
-            axis.set_xlim(XLIM)
-    
-    # Plot main result
-    fig_id = 'Result'
-    fig[fig_id] = plt.figure(fig_id)
-    ax_id = 'Result'
-    ax[ax_id] = fig[fig_id].add_subplot(111)
-    for i in selection:
-        data = exp[i]['M30']
-        ax[ax_id].plot(data[2], data[1])
-    ax[ax_id].set_xlabel('Temperature (C)')
-    ax[ax_id].set_ylabel('SEM current (A)')
-    ax[ax_id].text(0.05, 0.90, 'm/z = 30', color='k')
-    add_scale_Kelvin(ax[ax_id])
-
-    if not coverage is None and not doses is None:
-        # Plot uptake curve
-        fig_id = 'Uptake curve'
-        fig[fig_id] = plt.figure(fig_id)
-        ax_id = 'Uptake curve'
-        ax[ax_id] = fig[fig_id].add_subplot(111)
-        ax[ax_id].plot(doses/1.33e-6, coverage, 'ko')
-        ax[ax_id].set_xlabel('Doseage (1.33e-6 mbar s)')
-        ax[ax_id].set_ylabel('Coverage (C)')
-        x1, x2 = ax[ax_id].get_xlim()
-        ax[ax_id].set_xlim([0, x2])
-
+        elif ID == 2:    
+            # Plot main result
+            fig_id = 'Result'
+            fig[fig_id] = plt.figure(fig_id)
+            ax_id = 'Result'
+            ax[ax_id] = fig[fig_id].add_subplot(111)
+            for i in selection:
+                data = exp[i]['M30']
+                ax[ax_id].plot(data[2], data[1])
+            ax[ax_id].set_xlabel('Temperature (C)')
+            ax[ax_id].set_ylabel('SEM current (A)')
+            ax[ax_id].text(0.05, 0.90, 'm/z = 30', color='k')
+            add_scale_Kelvin(ax[ax_id])
     # Show plots
     plt.show()
 
-if __name__ == '__main__':
-    timestampd = input('Timestamp: ')
-    data = Experiment(timestampd, caching=False)
-    exp = data.isolate_experiments()
-    filename= data.name.replace(" ", "-").replace(":", "-")
-    try:
-        getdir=os.getcwd()+"\{}".format(data.name)
-        os.makedirs(getdir)
-    except FileExistsError:
-        pass
+
+
+def txt_save(ID):
+    if ID==1: #Create subfolder (if saving data as .txt)
+        filename= data.name.replace(" ", "-").replace(":", "-")
+        try:
+            getdir=os.getcwd()+"\{}".format(data.name)
+            os.makedirs(getdir)
+        except FileExistsError:
+            pass
+    elif ID==2: #Ask for coverage (if saving coverage as .txt)
+        coverage = float(input('Projected NP coverage (in %): ')) 
+        areas = []
     for i in exp.keys():
         for label in exp[i].keys():
             if label.startswith('M'):
                 dat = exp[i][label]
-                #if len(dat[1]) < 150:
-                #    print("Skipped ramp {}. Too short".format(i+1))
-                #    continue
+                if len(dat[1]) < 150: #skip ramps that are too small
+                    print("Skipped ramp {}. Too short".format(i+1))
+                    continue
                 tvals = dat[0]
                 xvals = dat[2]+273.15
                 yvals = dat[1]/1e-12
                 dx = tvals[1]-tvals[0] #find sampling rate
-                endindex = int((1/dx)*340) #find 240 sec into ramp index. temp is 50 at 240 sec into ramp
+                endindex = int((1/dx)*240) #find 240 sec into ramp index. temp is 50 at 240 sec into ramp
                 y = [sum(yvals[0:3])/3, sum(yvals[endindex-2:endindex+1])/3] #find averages of y in the beginning and 240s in
                 x = [tvals[0], tvals[0]+endindex] #find x at beginning and 240s in
                 coeff = np.polyfit(x, y, 1) #fit straight line
                 poly = np.poly1d(coeff) #construct polynomial
                 corr_y = yvals-poly(tvals) #correct y values
-                np.savetxt("D:\Skrivebord\Surfcat project\DataTreatment-master\{}\{}_{}_{}.txt".format(data.name, filename, label, i+1), np.column_stack([xvals,corr_y]), delimiter=",", header="Temperature,{} SEM current\nK,pA".format(label), comments="")
-                print("File saved as \{}\{}_{}_{}.txt".format(data.name, filename, label, i+1))
+                if ID==2:
+                    area= simps(corr_y,xvals) #find area
+                    areas.append([coverage, area])                    
+                    break                
+                elif ID==1:
+                    np.savetxt("{}\{}\{}_{}_{}.txt".format(os.getcwd(),data.name, filename, label, i+1), np.column_stack([xvals,corr_y]), delimiter=",", header="Temperature,{} SEM current\nK,pA".format(label), comments="")
+                    print("File saved as {}\{}\{}_{}_{}.txt".format(os.getcwd(),data.name, filename, label, i+1))
+    if ID==2:
+        root = tk.Tk()
+        file = filedialog.asksaveasfile(initialdir = os.getcwd(), defaultextension='.txt', mode='a')
+        np.savetxt(file, areas, delimiter=",", header="Coverage,Integrated current\%,AU", comments="")
+        print('File saved as: {}'.format(file.name))  
+        root.destroy()
+
+# ------------------------------------------------------------------------------------
+# Actual script begins here
+# ------------------------------------------------------------------------------------
+
+#Loading and isolating data
+timestampd = input('Timestamp: ')
+data = Experiment(timestampd, caching=False)
+exp = data.isolate_experiments()
+
+#Simple choice menu
+ans=True
+while ans:
+    print("""
+    Options:
+    -------------------------------------------
+    1. Plot overview
+    2. Plot main result
+    3. Save data as .txt
+    4. Calculate area under TPD and save as .txt
+    5. Quit
+    -------------------------------------------
+    """)
+    ans=input("Choose an option: ")
+    if ans=="1":
+      generate_standard_plots(exp, 1)
+    elif ans=="2":
+      generate_standard_plots(exp, 2)
+    elif ans=="3":
+      txt_save(1)
+    elif ans=="4":
+      txt_save(2)
+    elif ans=="5":
+      ans = None
+    else:
+       print("\n Not a valid choice, try again")
