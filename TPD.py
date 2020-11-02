@@ -402,8 +402,8 @@ def generate_standard_plots(exp, ID=None, coverage=None, doses=None, selection=[
             ax_twinx.plot(data[0] - data[0][0], data[1], 'm-')
             ax_twinx.set_ylim([0, 6.0])
             ax_twinx.set_ylabel('Current (A)')
-            """    
-            """# OLD CODE: Plot PID data
+        
+            # OLD CODE: Plot PID data
             ax[i][6] = fig[fig_id].add_subplot(122)
             data = exp[i]['P error']
             x = data[0] - data[0][0]
@@ -515,6 +515,10 @@ exp = data.isolate_experiments()
 ans=True
 while ans:
     print("""
+    -------------------------------------------
+    ------- Welcome to the TPD toolbox! -------
+    -------------------------------------------
+    
     Options:
     -------------------------------------------
     1. Plot overview
