@@ -1,9 +1,14 @@
-##A toolbox for plotting from VAMAS files. Works with ISS and XPS data.
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 from tkinter import *
 from tkinter import filedialog
+"""
+A toolbox for plotting from VAMAS files. Works with ISS and XPS data.
+
+Original author: Niklas Mørch Secher
+Modified by: Julius Lucas Needham
+"""
 
 #Determine whether data is XPS or ISS and passes the appropriate loaded module and an indicative marker. This is used in other functions throughout the code.
 def xps_or_iss(): 

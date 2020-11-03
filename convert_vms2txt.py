@@ -9,6 +9,9 @@ from tkinter import filedialog
 Convert VAMAS files to TXT files (Origin compatible header). 
 Prompts user to pick a directory, and searches subdirectories and converts all found files. 
 Auto-detects ISS or XPS data, and saves it appropriately.
+
+Original author: Jakob Ejler Sørensen
+Modified by: Julius Lucas Needham
 """
 
 #Ask for input folder and chdir to it.
