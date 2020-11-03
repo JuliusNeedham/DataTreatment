@@ -116,16 +116,35 @@ def mass2diameter():
 
 """Calculate time to get desired projected coverage on sample"""
 def coverage_time():
-    # Case 1: Area deposited is greater than the area of the sample 
-    ######################################################## ENTER VALUES    
+    #Choose mode for calculation
+    mode_choice=True
+    while mode_choice:
+        print("""
+----------------------------------------------------------------
+1. Sample area is larger than deposition area (A_sample > A_dep)
+2. Deposition area is larger than sample area (A_sample < A_dep)
+----------------------------------------------------------------
+        """)
+        mode_choice = input('Choose a mode: ')
+        if mode_choice == '1':
+            case = 1
+            break
+        elif mode_choice == '2':
+            case = 2
+            break
+        else:
+            print('\nNot a valid choice, enter a valid number')
+            
+    ######################################################## ENTER VALUES      
     
     # Loop for choosing pattern
     pattern_choice=True
     raster_cycle=None
     while pattern_choice:
-        print('---------------------------------------------')
-        print('Currently known raster patterns:')
-        print('0. Enter manually')
+        print("""
+--------------------------------------------
+Currently known raster patterns:
+0. Enter manually""")
         print(print_patterns)
         print('---------------------------------------------')
         pattern_choice=input("Choose a raster pattern: ")
@@ -137,29 +156,47 @@ def coverage_time():
             d_eff = float(input('Effective diameter (in mm): '))
             break
         else:
-           print("\n Not a valid choice, input a valid number")
+           print("\nNot a valid choice, enter a valid number")
     
     #ask for inputs about sample etc.
-    d_real = float(input('Sample diameter (in mm): '))
-    r = (float(input('Nanoparticle diameter (in nm): ')))/2
+    if case == 2:
+        d_real = float(input('Sample diameter (in mm): '))   
+    elif case == 1:
+        d_aperture = float(input('Aperture diameter (in mm): '))
+        
+    d_np = (float(input('Nanoparticle diameter (in nm): ')))
     Goal_coverage= float(input('Goal coverage (in %): '))/100 # goal coverage - in %
     Current = float(input('Current (in pA): '))*10**(-12) # current measured in pA   
     
     ########################################################  CALCULATE
-    Acover = (((d_eff/2)*10**(-3))**2)*math.pi # Total area covered by beam (including sample + mask and raster pattern effect).
-                                               # This number must be determined experimentally. Aka "raster area".                                            
-    Asample = (((d_real/2)*10**(-3))**2)*math.pi # Area of sample (smaller than Acover)
-    Rf = Asample/Acover # fraction of charge on sample (vs total charge on sample + surrounding plate). Aka "sample to spot ratio".
+    # Total area covered by beam (including sample + mask and raster pattern effect).
+    # This number must be determined experimentally. Aka "raster area".   
+    Acover = (((d_eff/2)*10**(-3))**2)*math.pi           
     
-    Adep = (Goal_coverage*Asample)/Rf  # Coverage = (Adep*Rf)/Asample, 
-                                        # Adep = total area of the deposited NANOPARTICLES (including sample + mask)
-    N = Adep/(math.pi*(r*10**(-9))**2) # Adep = N*r**2*math.pi    ==> Get number of particles deposited, N
-                           
-    e = 1.602*10**(-19)
+    # Asample: Area of sample (only if A_dep smaller than A_sample) 
+    # Rf: fraction of charge on sample (vs total charge on sample + surrounding plate). Aka "sample to spot ratio"
+    # Adep = total area of the deposited NANOPARTICLES (including sample + mask)  
+    # Coverage = (Adep*Rf)/Asample for case 2
+    if case == 2:
+        Asample = (((d_real/2)*10**(-3))**2)*math.pi 
+        Rf = Asample/Acover
+        Adep = (Goal_coverage*Asample)/Rf # Adep = N*r**2*math.pi 
+    elif case == 1:
+        Aaperture = (((d_aperture/2)*10**(-3))**2)*math.pi 
+        Adep = (Goal_coverage*Aaperture)
+
+    #==> Get number of particles deposited, N
+    Anp = (((d_np/2)*10**(-9))**2)*math.pi
+    N = Adep/Anp      
+    
+    e = 1.602*10**(-19) # Electron charge in C
     charges = Current/e # charges/s = NPs/s (Assume each nanoparticle has one elementary charge)
     
+    #Calculate and format time
     time = N/charges 
     time_formatted = datetime.timedelta(seconds=round(time))
+    
+    #Print output
     print('---------------------------------------------')
     print('Deposition time: {}'.format(str(time_formatted)))
     if raster_cycle is not None:
